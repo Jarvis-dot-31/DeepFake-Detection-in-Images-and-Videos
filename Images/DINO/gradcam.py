@@ -19,7 +19,6 @@ def reshape_transform(tensor, height=14, width=14):
 def analyze_image(image_path, ckpt_path):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
-    print("Initializing MTCNN...")
     detector = MTCNN(margin=20, keep_all=False, post_process=False, device=device)
     print(f"Reading image: {image_path}")
     original_img = Image.open(image_path).convert("RGB")
@@ -30,7 +29,6 @@ def analyze_image(image_path, ckpt_path):
     face_img = Image.fromarray(face_tensor.permute(1, 2, 0).byte().cpu().numpy())
     transform = get_val_transform()
     input_tensor = transform(face_img).unsqueeze(0).to(device)
-    print("Loading DINO Model...")
     model = DINODeepfakeDetector().to(device)
     ckpt = torch.load(ckpt_path, map_location=device, weights_only=False)
     model.load_state_dict(ckpt["model_state"])

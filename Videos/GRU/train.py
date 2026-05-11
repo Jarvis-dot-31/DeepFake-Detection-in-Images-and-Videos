@@ -119,7 +119,7 @@ def main():
             eta_min=1e-6
         )
 
-        for _ in range(remaining_epochs):
+        for i in range(remaining_epochs):
             current_epoch=global_epoch
             train_metrics=train_one_epoch(
                 model,
