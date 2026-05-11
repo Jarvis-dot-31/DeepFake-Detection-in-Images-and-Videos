@@ -86,6 +86,7 @@ async def predict_image(file: UploadFile = File(...), model_choice: str = Form(.
     contents = await file.read()
     image = Image.open(io.BytesIO(contents)).convert("RGB")
     image_tensor = image_val_transform(image)
+    original_img_np = np.array(image.resize((224, 224))) / 255.0
     
     model = models[model_choice]
     
@@ -101,11 +102,29 @@ async def predict_image(file: UploadFile = File(...), model_choice: str = Form(.
     verdict = "FAKE" if prob >= 0.5 else "REAL"
     confidence = prob if prob >= 0.5 else 1.0 - prob
     
+    cam_base64 = None
+    try:
+        if model_choice == "DINO":
+            target_layers = [model.backbone.blocks[-1].norm1]
+            cam = GradCAM(model=model.backbone, target_layers=target_layers, reshape_transform=reshape_transform)
+            grayscale_cam = cam(input_tensor=batch, targets=None)
+            vis = show_cam_on_image(original_img_np, grayscale_cam[0, :], use_rgb=True)
+            cam_base64 = tensor_to_base64(vis)
+        elif model_choice == "FFT":
+            target_layers = [model.net.layer4[-1]]
+            cam = GradCAM(model=model.net, target_layers=target_layers)
+            grayscale_cam = cam(input_tensor=batch, targets=None)
+            vis = show_cam_on_image(original_img_np, grayscale_cam[0, :], use_rgb=True)
+            cam_base64 = tensor_to_base64(vis)
+    except Exception as e:
+        print(f"Grad-CAM error: {e}")
+    
     return JSONResponse({
         "prediction": verdict,
         "probability": round(prob, 4),
         "confidence": round(confidence * 100, 2),
-        "model": model_choice
+        "model": model_choice,
+        "heatmap": cam_base64
     })
 
 def reshape_transform(tensor, height=14, width=14):
