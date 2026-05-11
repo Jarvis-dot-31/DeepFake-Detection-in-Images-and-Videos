@@ -1,305 +1,899 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Deepfake Detection</title>
-    <!-- Bootstrap CSS -->
+    <title>DeepScan — Deepfake Detection</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        slate: {
-                            850: '#141e2e',
-                            900: '#0f172a',
-                        },
-                        teal: {
-                            400: '#2dd4bf',
-                            500: '#14b8a6',
-                        }
-                    }
-                }
-            }
-        }
-    </script>
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,700;1,300&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+
     <style>
+        /* ─── TOKENS ─── */
+        :root {
+            --bg:          #000000;
+            --surface:     #0d0d0d;
+            --surface2:    #141414;
+            --border:      #242424;
+            --border2:     #333333;
+            --text:        #f5f5f5;
+            --muted:       #888888;
+            --accent:      #ff3c3c;
+            --accent2:     #ff7a00;
+            --safe:        #00e676;
+            --danger:      #ff1744;
+            --radius:      14px;
+            --font-display:'Bebas Neue', sans-serif;
+            --font-body:   'DM Sans', sans-serif;
+            --font-mono:   'JetBrains Mono', monospace;
+        }
+        [data-theme="light"] {
+            --bg:       #ffffff;
+            --surface:  #f7f7f7;
+            --surface2: #efefef;
+            --border:   #e0e0e0;
+            --border2:  #cccccc;
+            --text:     #111111;
+            --muted:    #666666;
+        }
+
+        /* ─── BASE ─── */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
         body {
-            font-family: 'Inter', sans-serif;
-            background-color: #0f172a;
-            color: #f8fafc;
+            font-family: var(--font-body);
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+            transition: background 0.35s, color 0.35s;
         }
-        .glass-panel {
-            background: rgba(30, 41, 59, 0.7);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 1rem;
+
+        /* ─── PARTICLES CANVAS ─── */
+        #particles-js {
+            position: fixed; inset: 0;
+            z-index: 0;
+            pointer-events: none;
         }
-        .btn-custom {
-            background: linear-gradient(135deg, #0ea5e9, #14b8a6);
-            color: white;
+
+        /* ─── LAYOUT ─── */
+        .page-wrap {
+            position: relative; z-index: 1;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 48px 16px 80px;
+        }
+
+        .main-card {
+            width: 100%;
+            max-width: 720px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: 0 0 0 1px var(--border2), 0 40px 80px rgba(0,0,0,0.5);
+            overflow: hidden;
+            animation: cardRise 0.7s cubic-bezier(0.22,1,0.36,1) both;
+        }
+        [data-theme="light"] .main-card {
+            box-shadow: 0 0 0 1px var(--border2), 0 20px 60px rgba(0,0,0,0.12);
+        }
+        @keyframes cardRise {
+            from { opacity: 0; transform: translateY(32px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ─── HEADER STRIP ─── */
+        .header-strip {
+            padding: 36px 40px 28px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 16px;
+        }
+        .brand {
+            display: flex; flex-direction: column; gap: 4px;
+        }
+        .brand-label {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--accent);
+        }
+        .brand-name {
+            font-family: var(--font-display);
+            font-size: 52px;
+            line-height: 1;
+            color: var(--text);
+            letter-spacing: 0.03em;
+        }
+        .brand-name span { color: var(--accent); }
+        .brand-sub {
+            font-size: 13px;
+            color: var(--muted);
+            margin-top: 6px;
+            max-width: 340px;
+            line-height: 1.5;
+        }
+
+        /* ─── THEME TOGGLE ─── */
+        .theme-toggle {
+            flex-shrink: 0;
+            background: var(--surface2);
+            border: 1px solid var(--border2);
+            border-radius: 50px;
+            padding: 6px;
+            display: flex;
+            gap: 4px;
+            cursor: pointer;
+        }
+        .theme-btn {
+            width: 34px; height: 34px;
+            border-radius: 50px;
             border: none;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-        .btn-custom:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(20, 184, 166, 0.4);
-            color: white;
-        }
-        .nav-tabs .nav-link {
-            color: #94a3b8;
-            border: none;
-            border-bottom: 2px solid transparent;
-            font-weight: 600;
-        }
-        .nav-tabs .nav-link.active {
-            color: #2dd4bf;
             background: transparent;
-            border-bottom: 2px solid #2dd4bf;
+            color: var(--muted);
+            font-size: 16px;
+            display: flex; align-items: center; justify-content: center;
+            transition: background 0.2s, color 0.2s;
+            cursor: pointer;
         }
-        .nav-tabs .nav-link:hover {
-            border-color: transparent;
-            color: #f8fafc;
+        .theme-btn.active {
+            background: var(--accent);
+            color: #fff;
         }
-        #result-card {
+
+        /* ─── STATUS BADGE ─── */
+        .status-bar {
+            padding: 10px 40px;
+            background: var(--surface2);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            color: var(--muted);
+        }
+        .dot {
+            width: 7px; height: 7px;
+            border-radius: 50%;
+            background: var(--safe);
+            box-shadow: 0 0 8px var(--safe);
+            animation: dotBlink 2s ease-in-out infinite;
+        }
+        @keyframes dotBlink {
+            0%, 100% { opacity: 1; }
+            50%       { opacity: 0.3; }
+        }
+
+        /* ─── CARD BODY ─── */
+        .card-body-inner {
+            padding: 36px 40px;
+        }
+
+        /* ─── TABS ─── */
+        .tab-row {
+            display: flex;
+            gap: 0;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 32px;
+            background: var(--surface2);
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            background: transparent;
+            color: var(--muted);
+            font-family: var(--font-body);
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s;
+            position: relative;
+            letter-spacing: 0.02em;
+        }
+        .tab-btn.active {
+            background: var(--bg);
+            color: var(--text);
+            border: 1px solid var(--border2);
+            border-radius: 8px;
+            margin: 4px;
+        }
+        .tab-btn .tab-icon { margin-right: 8px; font-size: 15px; }
+
+        /* ─── FORM FIELDS ─── */
+        .field-group { margin-bottom: 22px; }
+        .field-label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 8px;
+            font-family: var(--font-mono);
+        }
+        .field-select, .field-file {
+            width: 100%;
+            background: var(--surface2);
+            border: 1px solid var(--border2);
+            border-radius: 10px;
+            color: var(--text);
+            padding: 13px 16px;
+            font-family: var(--font-body);
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+        .field-select {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23888' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 16px center;
+            padding-right: 40px;
+        }
+        .field-select:focus, .field-file:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(255,60,60,0.15);
+        }
+
+        /* ─── FILE DROP ZONE ─── */
+        .drop-zone {
+            border: 2px dashed var(--border2);
+            border-radius: 10px;
+            padding: 36px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color 0.2s, background 0.2s;
+            position: relative;
+            background: var(--surface2);
+        }
+        .drop-zone:hover, .drop-zone.drag-over {
+            border-color: var(--accent);
+            background: rgba(255,60,60,0.04);
+        }
+        .drop-zone input[type="file"] {
+            position: absolute; inset: 0;
+            opacity: 0; cursor: pointer; width: 100%; height: 100%;
+        }
+        .drop-icon { font-size: 36px; margin-bottom: 8px; display: block; }
+        .drop-text {
+            font-size: 14px;
+            color: var(--muted);
+            line-height: 1.5;
+        }
+        .drop-text strong { color: var(--text); }
+        .drop-filename {
             display: none;
-            animation: fadeIn 0.5s ease-in-out;
+            margin-top: 10px;
+            font-family: var(--font-mono);
+            font-size: 12px;
+            color: var(--accent);
+            background: rgba(255,60,60,0.1);
+            padding: 4px 12px;
+            border-radius: 20px;
+            display: inline-block;
         }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+
+        /* ─── INFO ALERT ─── */
+        .info-banner {
+            background: rgba(255,122,0,0.08);
+            border: 1px solid rgba(255,122,0,0.25);
+            border-radius: 10px;
+            padding: 13px 16px;
+            font-size: 13px;
+            color: var(--muted);
+            margin-bottom: 22px;
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
         }
-        .spinner {
+        .info-banner .icon { color: var(--accent2); flex-shrink: 0; margin-top: 1px; }
+
+        /* ─── CTA BUTTON ─── */
+        .btn-scan {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            background: var(--text);
+            color: var(--bg);
+            font-family: var(--font-display);
+            font-size: 22px;
+            letter-spacing: 0.08em;
+            cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.15s, background 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+        .btn-scan::before {
+            content: '';
+            position: absolute; inset: 0;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        .btn-scan:hover::before { opacity: 1; }
+        .btn-scan:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(255,60,60,0.35);
+            color: #fff;
+        }
+        .btn-scan:active { transform: translateY(0); }
+        .btn-scan:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .btn-scan span, .btn-scan svg { position: relative; z-index: 1; }
+
+        /* ─── SPINNER ─── */
+        .scan-spinner {
             display: none;
+            width: 20px; height: 20px;
+            border: 2px solid rgba(255,255,255,0.2);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ─── DIVIDER ─── */
+        .divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 32px 0;
+        }
+
+        /* ─── RESULT PANEL ─── */
+        .result-panel {
+            display: none;
+            animation: panelIn 0.5s cubic-bezier(0.22,1,0.36,1) both;
+        }
+        @keyframes panelIn {
+            from { opacity: 0; transform: translateY(16px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .result-header {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 20px;
+        }
+
+        .verdict-block {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 16px;
+            padding: 28px 28px;
+            border-radius: var(--radius);
+            border: 1px solid var(--border2);
+            background: var(--surface2);
+            margin-bottom: 20px;
+        }
+        .verdict-text {
+            font-family: var(--font-display);
+            font-size: 72px;
+            line-height: 1;
+            letter-spacing: 0.04em;
+        }
+        .verdict-text.fake  { color: var(--danger); text-shadow: 0 0 40px rgba(255,23,68,0.3); }
+        .verdict-text.real  { color: var(--safe);   text-shadow: 0 0 40px rgba(0,230,118,0.3); }
+        .verdict-text.error { color: var(--muted); }
+
+        .verdict-meta { display: flex; flex-direction: column; gap: 10px; align-items: flex-end; }
+        .meta-chip {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 8px 14px;
+            font-family: var(--font-mono);
+            font-size: 12px;
+            color: var(--text);
+            white-space: nowrap;
+        }
+        .meta-chip span { color: var(--muted); margin-right: 6px; }
+
+        /* ─── CONFIDENCE BAR ─── */
+        .conf-bar-wrap {
+            padding: 20px 28px;
+            border-radius: var(--radius);
+            border: 1px solid var(--border2);
+            background: var(--surface2);
+            margin-bottom: 20px;
+        }
+        .conf-bar-label {
+            display: flex; justify-content: space-between;
+            font-family: var(--font-mono);
+            font-size: 12px;
+            color: var(--muted);
+            margin-bottom: 10px;
+        }
+        .conf-bar-track {
+            height: 6px;
+            background: var(--border2);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        .conf-bar-fill {
+            height: 100%;
+            border-radius: 6px;
+            width: 0;
+            transition: width 1s cubic-bezier(0.22,1,0.36,1);
+        }
+        .conf-bar-fill.fake { background: linear-gradient(90deg, #ff1744, #ff3c3c); }
+        .conf-bar-fill.real { background: linear-gradient(90deg, #00c853, #00e676); }
+
+        /* ─── HEATMAP ─── */
+        .heatmap-section {
+            display: none;
+            padding: 24px 28px;
+            border-radius: var(--radius);
+            border: 1px solid var(--border2);
+            background: var(--surface2);
+        }
+        .heatmap-title {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 16px;
+        }
+        .heatmap-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+        .frame-cell {
+            border-radius: 8px;
+            overflow: hidden;
+            aspect-ratio: 1;
+            background: var(--bg);
+            position: relative;
+        }
+        .frame-cell img {
+            width: 100%; height: 100%; object-fit: cover; display: block;
+        }
+        .frame-overlay {
+            position: absolute; inset: 0;
+            background: #ff1744;
+            mix-blend-mode: multiply;
+            pointer-events: none;
+        }
+        .heatmap-note {
+            font-size: 12px;
+            color: var(--muted);
+            margin-top: 12px;
+            line-height: 1.5;
+        }
+
+        /* ─── ERROR MSG ─── */
+        .error-msg {
+            display: none;
+            padding: 14px 18px;
+            border-radius: 10px;
+            background: rgba(255,23,68,0.08);
+            border: 1px solid rgba(255,23,68,0.25);
+            color: var(--danger);
+            font-size: 13px;
+            margin-top: 16px;
+            font-family: var(--font-mono);
+        }
+
+        /* ─── FOOTER ─── */
+        .card-footer-strip {
+            border-top: 1px solid var(--border);
+            padding: 14px 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 11px;
+            color: var(--muted);
+            font-family: var(--font-mono);
+        }
+        .model-badges { display: flex; gap: 8px; }
+        .badge-model {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 3px 8px;
+            font-size: 10px;
+            letter-spacing: 0.05em;
+        }
+
+        /* ─── RESPONSIVE ─── */
+        @media (max-width: 600px) {
+            .header-strip { padding: 24px; flex-direction: column; align-items: flex-start; }
+            .brand-name { font-size: 40px; }
+            .card-body-inner { padding: 24px; }
+            .card-footer-strip { padding: 14px 24px; flex-direction: column; gap: 8px; }
+            .verdict-text { font-size: 52px; }
+            .verdict-block { padding: 20px; }
+            .verdict-meta { align-items: flex-start; }
+            .heatmap-grid { grid-template-columns: repeat(3, 1fr); }
         }
     </style>
 </head>
-<body class="min-h-screen flex flex-col items-center justify-center py-10 px-4">
+<body>
 
-    <div class="container max-w-3xl glass-panel p-8 shadow-2xl">
-        <div class="text-center mb-8">
-            <h1 class="text-4xl font-bold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-teal-400">
-                Deepfake Detector
-            </h1>
-            <p class="text-slate-400">Analyze images and videos for authenticity using state-of-the-art AI models.</p>
-        </div>
+<div id="particles-js"></div>
 
-        <!-- Tabs -->
-        <ul class="nav nav-tabs mb-6 justify-content-center" id="myTab" role="tablist">
-            <li class="nav-item" role="presentation">
-                <button class="nav-link active px-5 py-3" id="image-tab" data-bs-toggle="tab" data-bs-target="#image-pane" type="button" role="tab" aria-controls="image-pane" aria-selected="true">Image Analysis</button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link px-5 py-3" id="video-tab" data-bs-toggle="tab" data-bs-target="#video-pane" type="button" role="tab" aria-controls="video-pane" aria-selected="false">Video Analysis</button>
-            </li>
-        </ul>
+<div class="page-wrap">
+    <div class="main-card">
 
-        <div class="tab-content" id="myTabContent">
-            <!-- Image Form -->
-            <div class="tab-pane fade show active" id="image-pane" role="tabpanel" aria-labelledby="image-tab" tabindex="0">
-                <form id="image-form" class="space-y-5">
-                    <div>
-                        <label class="block text-sm font-medium text-slate-300 mb-2">Select Image Model</label>
-                        <select name="model_choice" class="form-select bg-slate-800 border-slate-700 text-slate-200 rounded-lg shadow-sm focus:border-teal-500 focus:ring-teal-500">
-                            <option value="DINO">DINO ViT-B/16 (Best Accuracy)</option>
-                            <option value="FFT">FFT ResNet18 (Frequency Analysis)</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-slate-300 mb-2">Upload Image</label>
-                        <input class="form-control bg-slate-800 border-slate-700 text-slate-200 rounded-lg" type="file" name="file" accept="image/*" required>
-                    </div>
-                    <button type="submit" class="btn btn-custom w-100 py-3 rounded-lg font-bold text-lg d-flex justify-content-center align-items-center">
-                        <span class="btn-text">Analyze Image</span>
-                        <div class="spinner-border spinner-border-sm text-light ms-2 spinner" role="status">
-                            <span class="visually-hidden">Loading...</span>
-                        </div>
-                    </button>
-                </form>
+        <!-- HEADER -->
+        <div class="header-strip">
+            <div class="brand">
+                <div class="brand-label">// DEEP LEARNING(CS-671)</div>
+                <div class="brand-name">DEEP<span>SCAN</span></div>
+                <div class="brand-sub">Detect manipulated media using various models in real-time.</div>
             </div>
-
-            <!-- Video Form -->
-            <div class="tab-pane fade" id="video-pane" role="tabpanel" aria-labelledby="video-tab" tabindex="0">
-                <form id="video-form" class="space-y-5">
-                    <div>
-                        <div class="alert alert-info bg-slate-800 border-slate-700 text-slate-300" role="alert">
-                            <strong>Note:</strong> Video analysis uses the DINO-GRU sequential model. Processing may take a few moments.
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-slate-300 mb-2">Upload Video</label>
-                        <input class="form-control bg-slate-800 border-slate-700 text-slate-200 rounded-lg" type="file" name="file" accept="video/*" required>
-                    </div>
-                    <button type="submit" class="btn btn-custom w-100 py-3 rounded-lg font-bold text-lg d-flex justify-content-center align-items-center">
-                        <span class="btn-text">Analyze Video</span>
-                        <div class="spinner-border spinner-border-sm text-light ms-2 spinner" role="status">
-                            <span class="visually-hidden">Loading...</span>
-                        </div>
-                    </button>
-                </form>
+            <div class="theme-toggle" id="themeToggle" title="Toggle theme">
+                <button class="theme-btn active" id="btnDark" onclick="setTheme('dark')" title="Dark mode">🌑</button>
+                <button class="theme-btn" id="btnLight" onclick="setTheme('light')" title="Light mode">☀️</button>
             </div>
         </div>
 
-        <!-- Result Card -->
-        <div id="result-card" class="mt-8 p-6 rounded-xl bg-slate-800 border border-slate-700 shadow-lg text-center">
-            <h3 class="text-xl font-semibold text-slate-400 mb-2">Analysis Result</h3>
-            <div id="verdict" class="text-5xl font-bold mb-4 tracking-tight"></div>
-            <div class="flex justify-center gap-6 text-sm text-slate-300">
-                <div>Confidence: <span id="confidence" class="font-bold text-white"></span>%</div>
-                <div>Model: <span id="used-model" class="font-bold text-white"></span></div>
+        <!-- STATUS BAR -->
+        <div class="status-bar">
+            <div class="dot"></div>
+            <span>SYSTEM ONLINE</span>
+            <span style="margin-left:auto;">MODELS: DINO-ViT / FFT-ResNet18 / DINO-GRU</span>
+        </div>
+
+        <!-- BODY -->
+        <div class="card-body-inner">
+
+            <!-- TABS -->
+            <div class="tab-row" role="tablist">
+                <button class="tab-btn active" id="tab-image" onclick="switchTab('image')" role="tab">
+                    <span class="tab-icon"></span>Image Analysis
+                </button>
+                <button class="tab-btn" id="tab-video" onclick="switchTab('video')" role="tab">
+                    <span class="tab-icon"></span>Video Analysis
+                </button>
             </div>
-            
-            <!-- Temporal Heatmap Section -->
-            <div id="heatmap-section" class="mt-8 hidden">
-                <h4 class="text-lg font-semibold text-slate-300 mb-4">Temporal Attention Heatmap</h4>
-                <div id="heatmap-grid" class="grid grid-cols-4 gap-2">
-                    <!-- frames will be injected here -->
+
+            <!-- IMAGE FORM -->
+            <div id="pane-image">
+                <div class="field-group">
+                    <label class="field-label">Select Detection Model</label>
+                    <select name="model_choice" id="img-model" class="field-select">
+                        <option value="DINO">DINO ViT-B/16 — Best Accuracy</option>
+                        <option value="FFT">FFT ResNet18 — Frequency Analysis</option>
+                    </select>
                 </div>
-                <p class="text-xs text-slate-400 mt-3">Red highlight indicates frames that the model paid the most attention to.</p>
+                <div class="field-group">
+                    <label class="field-label">Upload Target Image</label>
+                    <div class="drop-zone" id="img-drop">
+                        <input type="file" id="img-file" name="file" accept="image/*" required>
+                        <span class="drop-icon">📂</span>
+                        <div class="drop-text"><strong>Drop image here</strong> or click to browse<br>JPG, PNG, WEBP accepted</div>
+                        <div class="drop-filename" id="img-filename"></div>
+                    </div>
+                </div>
+                <button class="btn-scan" id="img-btn" onclick="submitForm('image')">
+                    <span>RUN ANALYSIS</span>
+                    <div class="scan-spinner" id="img-spinner"></div>
+                </button>
             </div>
 
-            <div id="error-msg" class="text-red-400 mt-4 hidden"></div>
+            <!-- VIDEO FORM -->
+            <div id="pane-video" style="display:none;">
+                <div class="info-banner">
+                    <span class="icon">⚡</span>
+                    <span>Video analysis uses the <strong style="color:var(--text)">DINO-GRU sequential model</strong> with temporal attention mapping. Larger files may take a moment to process.</span>
+                </div>
+                <div class="field-group">
+                    <label class="field-label">Upload Target Video</label>
+                    <div class="drop-zone" id="vid-drop">
+                        <input type="file" id="vid-file" name="file" accept="video/*" required>
+                        <span class="drop-icon">🎞</span>
+                        <div class="drop-text"><strong>Drop video here</strong> or click to browse<br>MP4, MOV, AVI accepted</div>
+                        <div class="drop-filename" id="vid-filename"></div>
+                    </div>
+                </div>
+                <button class="btn-scan" id="vid-btn" onclick="submitForm('video')">
+                    <span>RUN ANALYSIS</span>
+                    <div class="scan-spinner" id="vid-spinner"></div>
+                </button>
+            </div>
+
+            <!-- RESULT -->
+            <div class="result-panel" id="result-panel">
+                <hr class="divider">
+                <div class="result-header">// Analysis Output</div>
+
+                <div class="verdict-block">
+                    <div class="verdict-text" id="verdict-text">—</div>
+                    <div class="verdict-meta">
+                        <div class="meta-chip"><span>MODEL</span> <span id="used-model">—</span></div>
+                        <div class="meta-chip"><span>CONFIDENCE</span> <span id="used-conf">—</span>%</div>
+                    </div>
+                </div>
+
+                <div class="conf-bar-wrap">
+                    <div class="conf-bar-label">
+                        <span>Authenticity Score</span>
+                        <span id="conf-pct">0%</span>
+                    </div>
+                    <div class="conf-bar-track">
+                        <div class="conf-bar-fill" id="conf-fill"></div>
+                    </div>
+                </div>
+
+                <div class="heatmap-section" id="heatmap-section">
+                    <div class="heatmap-title" id="heatmap-title">// Temporal Attention Heatmap</div>
+                    <div class="heatmap-grid" id="heatmap-grid"></div>
+                    <div class="heatmap-note" id="heatmap-note">Red highlight indicates frames the model weighted most during classification.</div>
+                </div>
+
+                <div class="error-msg" id="error-msg"></div>
+            </div>
+
         </div>
+
+        <!-- FOOTER -->
+        <div class="card-footer-strip">
+            <span>DeepScan &copy; 2026 — CS-671</span>
+            <div class="model-badges">
+                <span class="badge-model">DINO</span>
+                <span class="badge-model">FFT</span>
+                <span class="badge-model">GRU</span>
+            </div>
+        </div>
+
     </div>
+</div>
 
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
+<script>
+    /* ─── PARTICLES ─── */
+    function initParticles(theme) {
+        const isDark = theme === 'dark';
+        const particleColor  = isDark ? '#ff3c3c' : '#cc0000';
+        const lineColor      = isDark ? '#ff3c3c' : '#cc0000';
+        const particleOpacity = isDark ? 1.25 : 0.85;
+        const lineOpacity     = isDark ? 0.5 : 0.40;
 
-    <script>
-        function showLoading(formId) {
-            const form = document.getElementById(formId);
-            form.querySelector('.btn-text').style.display = 'none';
-            form.querySelector('.spinner').style.display = 'inline-block';
-            form.querySelector('button').disabled = true;
-            document.getElementById('result-card').style.display = 'none';
-            document.getElementById('error-msg').classList.add('hidden');
+        if (window.pJSDom && window.pJSDom.length > 0) {
+            window.pJSDom.forEach(p => p.pJS.fn.vendors.destroypJS());
+            window.pJSDom = [];
         }
 
-        function hideLoading(formId) {
-            const form = document.getElementById(formId);
-            form.querySelector('.btn-text').style.display = 'inline-block';
-            form.querySelector('.spinner').style.display = 'none';
-            form.querySelector('button').disabled = false;
-        }
-
-        function displayResult(data) {
-            const card = document.getElementById('result-card');
-            const verdictEl = document.getElementById('verdict');
-            const confEl = document.getElementById('confidence');
-            const modelEl = document.getElementById('used-model');
-            const errorEl = document.getElementById('error-msg');
-
-            card.style.display = 'block';
-
-            if (data.error) {
-                verdictEl.textContent = 'Error';
-                verdictEl.className = 'text-5xl font-bold mb-4 tracking-tight text-red-500';
-                confEl.textContent = '-';
-                modelEl.textContent = '-';
-                errorEl.textContent = data.error;
-                errorEl.classList.remove('hidden');
-                return;
-            }
-
-            verdictEl.textContent = data.prediction;
-            if (data.prediction === 'FAKE') {
-                verdictEl.className = 'text-5xl font-bold mb-4 tracking-tight text-red-500';
-            } else {
-                verdictEl.className = 'text-5xl font-bold mb-4 tracking-tight text-emerald-400';
-            }
-
-            confEl.textContent = data.confidence;
-            modelEl.textContent = data.model;
-            
-            // Clear previous heatmap
-            const heatmapSection = document.getElementById('heatmap-section');
-            const heatmapGrid = document.getElementById('heatmap-grid');
-            heatmapGrid.innerHTML = '';
-            
-            if (data.frames) {
-                heatmapSection.classList.remove('hidden');
-                document.querySelector('#heatmap-section h4').textContent = data.spatial_heatmaps ? 'Spatial Attention Heatmap (Grad-CAM)' : 'Temporal Attention Heatmap';
-                document.querySelector('#heatmap-section p').textContent = data.spatial_heatmaps ? 'Heatmap shows which spatial regions were most important.' : 'Red highlight indicates frames that the model paid the most attention to.';
-                
-                let weights = [];
-                let maxAtt = 0;
-                if (data.attentions) {
-                    weights = data.attentions.map(a => Array.isArray(a) ? a[0] : a);
-                    maxAtt = Math.max(...weights);
+        particlesJS('particles-js', {
+            particles: {
+                number: { value: 80, density: { enable: true, value_area: 900 } },
+                color: { value: particleColor },
+                shape: { type: 'circle' },
+                opacity: {
+                    value: particleOpacity,
+                    random: true,
+                    anim: { enable: true, speed: 0.8, opacity_min: 0.05, sync: false }
+                },
+                size: {
+                    value: 2.5,
+                    random: true,
+                    anim: { enable: true, speed: 2, size_min: 0.3, sync: false }
+                },
+                line_linked: {
+                    enable: true,
+                    distance: 150,
+                    color: lineColor,
+                    opacity: lineOpacity,
+                    width: 1
+                },
+                move: {
+                    enable: true,
+                    speed: 1.4,
+                    direction: 'none',
+                    random: true,
+                    straight: false,
+                    out_mode: 'out',
+                    attract: { enable: false }
                 }
-                
-                for (let i = 0; i < data.frames.length; i++) {
-                    const frameBase64 = data.frames[i];
-                    let opacity = 0;
-                    
-                    if (data.attentions && maxAtt > 0) {
-                        const weight = weights[i];
-                        opacity = (weight / maxAtt).toFixed(2);
-                    }
-                    
-                    const div = document.createElement('div');
-                    div.className = 'relative rounded overflow-hidden shadow-sm aspect-square bg-black flex items-center justify-center';
-                    
-                    const img = document.createElement('img');
-                    img.src = 'data:image/jpeg;base64,' + frameBase64;
-                    img.className = 'w-full h-full object-cover';
-                    
-                    div.appendChild(img);
-                    
-                    if (!data.spatial_heatmaps) {
-                        const overlay = document.createElement('div');
-                        overlay.className = 'absolute inset-0 bg-red-500 mix-blend-multiply pointer-events-none transition-opacity duration-300';
-                        overlay.style.opacity = opacity;
-                        div.appendChild(overlay);
-                    }
-                    
-                    heatmapGrid.appendChild(div);
+            },
+            interactivity: {
+                detect_on: 'window',
+                events: {
+                    onhover: { enable: true, mode: 'grab' },
+                    onclick: { enable: true, mode: 'push' },
+                    resize: true
+                },
+                modes: {
+                    grab: { distance: 160, line_linked: { opacity: 0.45 } },
+                    push: { particles_nb: 3 }
                 }
-            } else {
-                heatmapSection.classList.add('hidden');
-            }
+            },
+            retina_detect: true
+        });
+    }
+
+    /* ─── THEME ─── */
+    function setTheme(t) {
+        document.documentElement.setAttribute('data-theme', t);
+        document.getElementById('btnDark').classList.toggle('active', t === 'dark');
+        document.getElementById('btnLight').classList.toggle('active', t === 'light');
+        localStorage.setItem('ds-theme', t);
+        initParticles(t);
+    }
+    (function(){
+        const saved = localStorage.getItem('ds-theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', saved);
+        document.getElementById('btnDark').classList.toggle('active', saved === 'dark');
+        document.getElementById('btnLight').classList.toggle('active', saved === 'light');
+        // Init particles after DOM + particles.js is ready
+        window.addEventListener('load', () => initParticles(saved));
+    })();
+
+    /* ─── TABS ─── */
+    let activeTab = 'image';
+    function switchTab(t) {
+        activeTab = t;
+        document.getElementById('pane-image').style.display = t === 'image' ? 'block' : 'none';
+        document.getElementById('pane-video').style.display = t === 'video' ? 'block' : 'none';
+        document.getElementById('tab-image').classList.toggle('active', t === 'image');
+        document.getElementById('tab-video').classList.toggle('active', t === 'video');
+        hideResult();
+    }
+
+    /* ─── FILE NAMES ─── */
+    document.getElementById('img-file').addEventListener('change', function() {
+        const el = document.getElementById('img-filename');
+        if (this.files[0]) { el.textContent = '📎 ' + this.files[0].name; el.style.display = 'inline-block'; }
+    });
+    document.getElementById('vid-file').addEventListener('change', function() {
+        const el = document.getElementById('vid-filename');
+        if (this.files[0]) { el.textContent = '📎 ' + this.files[0].name; el.style.display = 'inline-block'; }
+    });
+
+    /* ─── DRAG & DROP ─── */
+    ['img-drop','vid-drop'].forEach(id => {
+        const el = document.getElementById(id);
+        el.addEventListener('dragover', e => { e.preventDefault(); el.classList.add('drag-over'); });
+        el.addEventListener('dragleave', () => el.classList.remove('drag-over'));
+        el.addEventListener('drop', e => { e.preventDefault(); el.classList.remove('drag-over'); });
+    });
+
+    /* ─── SUBMIT ─── */
+    function submitForm(type) {
+        const fileInput = document.getElementById(type === 'image' ? 'img-file' : 'vid-file');
+        if (!fileInput.files.length) {
+            showError('Please select a file before running analysis.');
+            const panel = document.getElementById('result-panel');
+            panel.style.display = 'block';
+            return;
+        }
+        const btn     = document.getElementById(type === 'image' ? 'img-btn' : 'vid-btn');
+        const spinner = document.getElementById(type === 'image' ? 'img-spinner' : 'vid-spinner');
+        const btnSpan = btn.querySelector('span');
+
+        btn.disabled = true;
+        btnSpan.textContent = 'SCANNING…';
+        spinner.style.display = 'block';
+        hideResult();
+
+        const fd = new FormData();
+        fd.append('file', fileInput.files[0]);
+        if (type === 'image') fd.append('model_choice', document.getElementById('img-model').value);
+
+        const endpoint = type === 'image' ? '/predict/image' : '/predict/video';
+
+        fetch(endpoint, { method: 'POST', body: fd })
+            .then(r => r.json())
+            .then(data => displayResult(data))
+            .catch(() => displayResult({ error: 'Failed to connect to the server. Is the backend running?' }))
+            .finally(() => {
+                btn.disabled = false;
+                btnSpan.textContent = 'RUN ANALYSIS';
+                spinner.style.display = 'none';
+            });
+    }
+
+    /* ─── RESULTS ─── */
+    function hideResult() {
+        document.getElementById('result-panel').style.display = 'none';
+        document.getElementById('error-msg').style.display = 'none';
+        document.getElementById('heatmap-section').style.display = 'none';
+    }
+
+    function showError(msg) {
+        const el = document.getElementById('error-msg');
+        el.textContent = '⚠ ' + msg;
+        el.style.display = 'block';
+    }
+
+    function displayResult(data) {
+        const panel    = document.getElementById('result-panel');
+        const verdictEl = document.getElementById('verdict-text');
+        const modelEl  = document.getElementById('used-model');
+        const confEl   = document.getElementById('used-conf');
+        const confPct  = document.getElementById('conf-pct');
+        const fill     = document.getElementById('conf-fill');
+        const errEl    = document.getElementById('error-msg');
+        errEl.style.display = 'none';
+
+        panel.style.display = 'block';
+        // Trigger animation
+        panel.classList.remove('result-panel');
+        void panel.offsetWidth;
+        panel.classList.add('result-panel');
+
+        if (data.error) {
+            verdictEl.textContent = 'ERROR';
+            verdictEl.className = 'verdict-text error';
+            modelEl.textContent = '—';
+            confEl.textContent = '—';
+            confPct.textContent = '—';
+            fill.style.width = '0%';
+            showError(data.error);
+            return;
         }
 
-        document.getElementById('image-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            showLoading('image-form');
-            const formData = new FormData(e.target);
-            try {
-                const res = await fetch('/predict/image', {
-                    method: 'POST',
-                    body: formData
-                });
-                const data = await res.json();
-                displayResult(data);
-            } catch (err) {
-                displayResult({error: 'Failed to connect to the server.'});
-            }
-            hideLoading('image-form');
-        });
+        const isFake = data.prediction === 'FAKE';
+        verdictEl.textContent = data.prediction;
+        verdictEl.className   = 'verdict-text ' + (isFake ? 'fake' : 'real');
+        modelEl.textContent   = data.model || '—';
+        confEl.textContent    = data.confidence || '—';
+        confPct.textContent   = (data.confidence || '0') + '%';
 
-        document.getElementById('video-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            showLoading('video-form');
-            const formData = new FormData(e.target);
-            try {
-                const res = await fetch('/predict/video', {
-                    method: 'POST',
-                    body: formData
-                });
-                const data = await res.json();
-                displayResult(data);
-            } catch (err) {
-                displayResult({error: 'Failed to connect to the server.'});
+        fill.className = 'conf-bar-fill ' + (isFake ? 'fake' : 'real');
+        setTimeout(() => { fill.style.width = (data.confidence || 0) + '%'; }, 100);
+
+        // Heatmap
+        const heatmap  = document.getElementById('heatmap-section');
+        const grid     = document.getElementById('heatmap-grid');
+        const title    = document.getElementById('heatmap-title');
+        const note     = document.getElementById('heatmap-note');
+        grid.innerHTML = '';
+
+        if (data.frames && data.frames.length) {
+            heatmap.style.display = 'block';
+            title.textContent = data.spatial_heatmaps
+                ? '// Spatial Attention Heatmap (Grad-CAM)'
+                : '// Temporal Attention Heatmap';
+            note.textContent = data.spatial_heatmaps
+                ? 'Heatmap shows which spatial regions were most important for the prediction.'
+                : 'Red highlight indicates frames that the model paid the most attention to during classification.';
+
+            let weights = [], maxAtt = 0;
+            if (data.attentions) {
+                weights = data.attentions.map(a => Array.isArray(a) ? a[0] : a);
+                maxAtt  = Math.max(...weights);
             }
-            hideLoading('video-form');
-        });
-    </script>
+
+            data.frames.forEach((b64, i) => {
+                const div = document.createElement('div');
+                div.className = 'frame-cell';
+
+                const img = document.createElement('img');
+                img.src   = 'data:image/jpeg;base64,' + b64;
+                div.appendChild(img);
+
+                if (!data.spatial_heatmaps && data.attentions && maxAtt > 0) {
+                    const ov = document.createElement('div');
+                    ov.className = 'frame-overlay';
+                    ov.style.opacity = (weights[i] / maxAtt).toFixed(2);
+                    div.appendChild(ov);
+                }
+                grid.appendChild(div);
+            });
+        }
+    }
+</script>
 </body>
 </html>
